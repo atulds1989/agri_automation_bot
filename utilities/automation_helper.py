@@ -1,3 +1,5 @@
+# agri_entry_bot/utilities/automation_helper.py
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,12 +12,10 @@ import random
 import numpy as np
 from selenium.common.exceptions import TimeoutException
 import time
-from utilities.driver_helper import setup_driver  # Assuming this is in a separate file named driver_helper.py
-from utilities.config import *
-
+from utilities.driver_helper import setup_driver
 
 class AutomationHelper:
-    def __init__(self, website_url=WEBSITE_URL, state_name=STATE_NAME, username=USERNAME, password=PASSWORD, village_name=VILLAGE_NAME):
+    def __init__(self, website_url, state_name, username, password, village_name):
         self.website_url = website_url
         self.state_name = state_name
         self.username = username
