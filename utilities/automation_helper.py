@@ -150,9 +150,10 @@ class AutomationHelper:
 
                 # Wait for table to load
                 WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//table[@id='myTable']")))
+                time.sleep(0.5)
 
                 # (D.2) Extract “Area Operated” from row 2, column 5
-                area_xpath = "//table[@id='myTable']/tbody/tr[2]/td[5]"
+                area_xpath = "//table[@id='myTable']/tbody/tr[1]/td[5]"
                 print("Extracting Area Operated from the first data row…")
                 extracted_area_value = 0.0
                 try:
@@ -163,10 +164,10 @@ class AutomationHelper:
                     print(f"Could not extract Area Operated or convert to float: {e}")
                     extracted_area_value = 0.0
                 print(f"→ Extracted Area = {extracted_area_value:.4f}")
-                time.sleep(1.0)
+                time.sleep(0.5)
 
                 # (D.3) Click the checkbox in row[2]
-                checkbox_xpath = "//table[@id='myTable']/tbody/tr[2]//input[@type='checkbox']"
+                checkbox_xpath = "//table[@id='myTable']/tbody/tr[1]//input[@type='checkbox']"
                 print("Clicking checkbox for that farmer…")
                 try:
                     checkbox = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, checkbox_xpath)))
