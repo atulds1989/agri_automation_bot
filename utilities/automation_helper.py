@@ -128,7 +128,7 @@ class AutomationHelper:
                 return
 
             # --- (D) LOOP THROUGH EACH FARMER, ALWAYS TARGETING tr[2] ---
-            for idx in range(0, 2):
+            for idx in range(0, 3):
                 print(f"\n===== Processing farmer {idx+1} of {2} =====")
 
                 # (D.1) Re-open the “Schedules(Ph.-I)” pop-up
@@ -163,6 +163,7 @@ class AutomationHelper:
                     print(f"Could not extract Area Operated or convert to float: {e}")
                     extracted_area_value = 0.0
                 print(f"→ Extracted Area = {extracted_area_value:.4f}")
+                time.sleep(1.0)
 
                 # (D.3) Click the checkbox in row[2]
                 checkbox_xpath = "//table[@id='myTable']/tbody/tr[2]//input[@type='checkbox']"
@@ -179,168 +180,187 @@ class AutomationHelper:
                 WebDriverWait(driver, 10).until(EC.url_contains("Schedule_H.jsp"))
                 print("Switched back to main data entry form.")
 
-                # --- Calculate fallow_area_value BEFORE using extracted_area_value for total_area ---
-                fallow_area_value = 0.0
-                # Iterate through field_05 to field_15 to sum their values for fallow_area_value
-                for i in range(5, 16): # This loop goes from 5 to 15 (inclusive)
-                    field_name = f"field_{i:02d}" # Formats as field_05, field_06, etc.
-                    try:
-                        fallow_field = WebDriverWait(driver, 5).until(
-                            EC.presence_of_element_located((By.NAME, field_name))
-                        )
-                        field_value_str = fallow_field.get_attribute("value").strip()
-                        if field_value_str:
-                            fallow_area_value += float(field_value_str)
-                        print(f"  Fetched {field_name}: {field_value_str}. Current fallow_area_value: {fallow_area_value:.4f}")
-                    except TimeoutException:
-                        print(f"  {field_name} not found or not visible; skipping for fallow area calculation.")
-                    except ValueError:
-                        print(f"  Could not convert value of {field_name} ('{field_value_str}') to float; skipping.")
-                    except Exception as e:
-                        print(f"  An error occurred while fetching {field_name}: {e}")
+                if extracted_area_value > 0.10:
+                    print(f"Processing farmer with Area Operated: {extracted_area_value:.4f}")
 
-                print(f"Total calculated fallow_area_value: {fallow_area_value:.4f}")
+                    # --- Calculate fallow_area_value BEFORE using extracted_area_value for total_area ---
+                    fallow_area_value = 0.0
+                    # Iterate through field_05 to field_15 to sum their values for fallow_area_value
+                    for i in range(5, 16): # This loop goes from 5 to 15 (inclusive)
+                        field_name = f"field_{i:02d}" # Formats as field_05, field_06, etc.
+                        try:
+                            fallow_field = WebDriverWait(driver, 5).until(
+                                EC.presence_of_element_located((By.NAME, field_name))
+                            )
+                            field_value_str = fallow_field.get_attribute("value").strip()
+                            if field_value_str:
+                                fallow_area_value += float(field_value_str)
+                            print(f"  Fetched {field_name}: {field_value_str}. Current fallow_area_value: {fallow_area_value:.4f}")
+                        except TimeoutException:
+                            print(f"  {field_name} not found or not visible; skipping for fallow area calculation.")
+                        except ValueError:
+                            print(f"  Could not convert value of {field_name} ('{field_value_str}') to float; skipping.")
+                        except Exception as e:
+                            print(f"  An error occurred while fetching {field_name}: {e}")
 
-                # Calculate result_real_area
-                result_real_area = extracted_area_value - fallow_area_value
-                print(f"Calculated result_real_area (extracted_area_value - fallow_area_value): {result_real_area:.4f}")
+                    print(f"Total calculated fallow_area_value: {fallow_area_value:.4f}")
 
-                # Now, use result_real_area for your total_area for filling Block C
-                total_area = result_real_area # Use the corrected area
-                formatted_full = f"{total_area:.4f}"
+                    # Calculate result_real_area
+                    result_real_area = extracted_area_value - fallow_area_value
+                    print(f"Calculated result_real_area (extracted_area_value - fallow_area_value): {result_real_area:.4f}")
 
-                # (D.4) BLOCK C → fill field_05, field_06, tot_crops
-                print("--- Filling Block C ---")
+                    if result_real_area > 0:
 
-                # 04. Net Irrigated Area → field_05 (This field is now overwritten based on result_real_area)
-                try:
-                    field05 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "field_05")))
-                    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field05)
-                    field05.clear()
-                    field05.send_keys(formatted_full)
-                    field05.send_keys(Keys.TAB)
-                    time.sleep(0.5)
-                    print(f"→ field_05 set to {formatted_full}")
-                except Exception as e:
-                    print(f"Could not set field_05: {e}")
+                        # Now, use result_real_area for your total_area for filling Block C
+                        total_area = result_real_area # Use the corrected area
+                        formatted_full = f"{total_area:.4f}"
 
-                # # 05. Net Unirrigated Area → field_06 = "0.0000"
-                # try:
-                #     field06 = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, "field_06")))
-                #     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field06)
-                #     field06.clear()
-                #     field06.send_keys("0.0000")
-                #     field06.send_keys(Keys.TAB)
-                #     time.sleep(0.5)
-                #     print("→ field_06 set to 0.0000")
-                # except:
-                #     print("field_06 not found; skipping")
+                        # (D.4) BLOCK C → fill field_05, field_06, tot_crops
+                        print("--- Filling Block C ---")
 
-                # Number of Crops → tot_crops = "3"
-                got_crops = False
-                try:
-                    crops_field = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, "tot_crops")))
-                    got_crops = True
-                except TimeoutException:
-                    try:
-                        crops_field = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
-                            By.XPATH,
-                            "//td[contains(normalize-space(text()), 'Number of Crops grown during the reference year')]/following-sibling::td//input"
-                        )))
-                        got_crops = True
-                    except:
+                        # 04. Net Irrigated Area → field_05 (This field is now overwritten based on result_real_area)
+                        try:
+                            field05 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "field_05")))
+                            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field05)
+                            field05.clear()
+                            field05.send_keys(formatted_full)
+                            field05.send_keys(Keys.TAB)
+                            time.sleep(0.5)
+                            print(f"→ field_05 set to {formatted_full}")
+                        except Exception as e:
+                            print(f"Could not set field_05: {e}")
+
+                        # # 05. Net Unirrigated Area → field_06 = "0.0000"
+                        # try:
+                        #     field06 = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, "field_06")))
+                        #     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field06)
+                        #     field06.clear()
+                        #     field06.send_keys("0.0000")
+                        #     field06.send_keys(Keys.TAB)
+                        #     time.sleep(0.5)
+                        #     print("→ field_06 set to 0.0000")
+                        # except:
+                        #     print("field_06 not found; skipping")
+
+                        # Number of Crops → tot_crops = "3"
                         got_crops = False
+                        try:
+                            crops_field = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, "tot_crops")))
+                            got_crops = True
+                        except TimeoutException:
+                            try:
+                                crops_field = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                                    By.XPATH,
+                                    "//td[contains(normalize-space(text()), 'Number of Crops grown during the reference year')]/following-sibling::td//input"
+                                )))
+                                got_crops = True
+                            except:
+                                got_crops = False
 
-                if got_crops:
-                    try:
-                        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", crops_field)
-                        crops_field.clear()
-                        crops_field.send_keys("3")
-                        crops_field.send_keys(Keys.TAB)
+                        if got_crops:
+                            try:
+                                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", crops_field)
+                                crops_field.clear()
+                                crops_field.send_keys("3")
+                                crops_field.send_keys(Keys.TAB)
+                                time.sleep(0.5)
+                                print("→ tot_crops set to 3")
+                            except Exception as e:
+                                print(f"Could not fill tot_crops: {e}")
+                                got_crops = False
+                        else:
+                            print("Number of Crops field not found; skipping Block D")
+
+                        # # (D.5) BLOCK D → only if got_crops True AND total_area > 0.0
+                        # if got_crops and total_area > 0.0:
+                        #     print("--- Filling Block D ---")
+                            # first_half_area = np.round(total_area / 2.0)
+                            # second_half_area = np.round(total_area - first_half_area)
+
+                            # print(f"total area : {total_area:4f}, Calculated first_half_area: {first_half_area:.4f},\
+                            #        second_half_area: {second_half_area:.4f}")
+                            
+                            # first_formatted_half = f"{first_half_area:.4f}"
+                            # second_formatted_half = f"{first_half_area:.4f}"
+
+                        # (D.5) BLOCK D → only if got_crops True AND total_area > 0.0
+                        if got_crops and total_area > 0.0:
+                            print("--- Filling Block D ---")
+                            half_area = total_area / 2.0
+                            formatted_half = f"{half_area:.4f}"
+
+                            print(f"total area : {total_area:4f}, Calculated first_half_area: {half_area:.4f}")
+                            
+                            # Row 1: cr_code_10 & unirri_ar_10
+                            try:
+                                code1 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "cr_code_10")))
+                                unirri1 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "unirri_ar_10")))
+                                code1.clear()
+                                code1.send_keys("1009")
+                                unirri1.clear()
+                                unirri1.send_keys(formatted_full)
+                                unirri1.send_keys(Keys.TAB)
+                                time.sleep(0.3)
+                            except Exception as e:
+                                print(f"Could not fill Block D row 1: {e}")
+
+                            # Row 2: cr_code_11 & irri_ar_11
+                            try:
+                                code2 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "cr_code_11")))
+                                irr2 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "irri_ar_11")))
+                                code2.clear()
+                                code2.send_keys("201")
+                                irr2.clear()
+                                irr2.send_keys(formatted_half)
+                                irr2.send_keys(Keys.TAB)
+                                time.sleep(0.3)
+                            except Exception as e:
+                                print(f"Could not fill Block D row 2: {e}")
+
+                            # Row 3: cr_code_12 & irri_ar_12
+                            try:
+                                code3 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "cr_code_12")))
+                                irr3 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "irri_ar_12")))
+                                code3.clear()
+                                code3.send_keys("106")
+                                irr3.clear()
+                                irr3.send_keys(formatted_half)
+                                irr3.send_keys(Keys.TAB)
+                                time.sleep(0.3)
+                            except Exception as e:
+                                print(f"Could not fill Block D row 3: {e}")
+
+                            print("Block D rows filled.\n")
+                        else:
+                            print("Skipping Block D (no Crops or missing field).\n")
+
+                        # (D.6) SOURCE OF IRRIGATION → Random pick, fill Remarks, then Save → SweetAlert2 pop-ups
+                        pick_list = ["2 - Wells", "3 - Tubewells", "5 - Others"]
+                        pick = random.choice(pick_list)
+                        try:
+                            src_sel = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "source_irr")))
+                            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", src_sel)
+                            src_sel.click()
+                            time.sleep(0.5)
+                            src_sel.find_element(By.XPATH, f".//option[normalize-space(text())='{pick}']").click()
+                            print(f"→ source_irri set to '{pick}'")
+                        except Exception as e:
+                            print(f"Could not set Source of Irrigation: {e}")
                         time.sleep(0.5)
-                        print("→ tot_crops set to 3")
-                    except Exception as e:
-                        print(f"Could not fill tot_crops: {e}")
-                        got_crops = False
                 else:
-                    print("Number of Crops field not found; skipping Block D")
-
-                # # (D.5) BLOCK D → only if got_crops True AND total_area > 0.0
-                # if got_crops and total_area > 0.0:
-                #     print("--- Filling Block D ---")
-                    # first_half_area = np.round(total_area / 2.0)
-                    # second_half_area = np.round(total_area - first_half_area)
-
-                    # print(f"total area : {total_area:4f}, Calculated first_half_area: {first_half_area:.4f},\
-                    #        second_half_area: {second_half_area:.4f}")
-                    
-                    # first_formatted_half = f"{first_half_area:.4f}"
-                    # second_formatted_half = f"{first_half_area:.4f}"
-
-                # (D.5) BLOCK D → only if got_crops True AND total_area > 0.0
-                if got_crops and total_area > 0.0:
-                    print("--- Filling Block D ---")
-                    half_area = total_area / 2.0
-                    formatted_half = f"{half_area:.4f}"
-
-                    print(f"total area : {total_area:4f}, Calculated first_half_area: {half_area:.4f}")
-                    
-                    # Row 1: cr_code_10 & unirri_ar_10
+                    print(f"Handling (** extracted area < 0.10) Processing farmer with Area Operated: {extracted_area_value:.4f}")
+                    #  If extracted area is < 0.10 → field_05 will be filles as Fallow Area
+                    formatted_full = f"{extracted_area_value:.4f}"
                     try:
-                        code1 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "cr_code_10")))
-                        unirri1 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "unirri_ar_10")))
-                        code1.clear()
-                        code1.send_keys("1009")
-                        unirri1.clear()
-                        unirri1.send_keys(formatted_full)
-                        unirri1.send_keys(Keys.TAB)
-                        time.sleep(0.3)
+                        field06 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "field_06")))
+                        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field06)
+                        field06.clear()
+                        field06.send_keys(formatted_full)
+                        field06.send_keys(Keys.TAB)
+                        time.sleep(1.0)
+                        print(f"→ field_05 set to {formatted_full}")
                     except Exception as e:
-                        print(f"Could not fill Block D row 1: {e}")
-
-                    # Row 2: cr_code_11 & irri_ar_11
-                    try:
-                        code2 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "cr_code_11")))
-                        irr2 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "irri_ar_11")))
-                        code2.clear()
-                        code2.send_keys("201")
-                        irr2.clear()
-                        irr2.send_keys(formatted_half)
-                        irr2.send_keys(Keys.TAB)
-                        time.sleep(0.3)
-                    except Exception as e:
-                        print(f"Could not fill Block D row 2: {e}")
-
-                    # Row 3: cr_code_12 & irri_ar_12
-                    try:
-                        code3 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "cr_code_12")))
-                        irr3 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "irri_ar_12")))
-                        code3.clear()
-                        code3.send_keys("106")
-                        irr3.clear()
-                        irr3.send_keys(formatted_half)
-                        irr3.send_keys(Keys.TAB)
-                        time.sleep(0.3)
-                    except Exception as e:
-                        print(f"Could not fill Block D row 3: {e}")
-
-                    print("Block D rows filled.\n")
-                else:
-                    print("Skipping Block D (no Crops or missing field).\n")
-
-                # (D.6) SOURCE OF IRRIGATION → Random pick, fill Remarks, then Save → SweetAlert2 pop-ups
-                pick_list = ["2 - Wells", "3 - Tubewells", "5 - Others"]
-                pick = random.choice(pick_list)
-                try:
-                    src_sel = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "source_irr")))
-                    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", src_sel)
-                    src_sel.click()
-                    time.sleep(0.5)
-                    src_sel.find_element(By.XPATH, f".//option[normalize-space(text())='{pick}']").click()
-                    print(f"→ source_irri set to '{pick}'")
-                except Exception as e:
-                    print(f"Could not set Source of Irrigation: {e}")
-                time.sleep(0.5)
+                        print(f"Could not set field_05: {e}")
 
                 try:
                     # field05 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "field_05")))
