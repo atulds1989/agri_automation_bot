@@ -15,12 +15,13 @@ import time
 from utilities.driver_helper import setup_driver
 
 class AutomationHelper:
-    def __init__(self, website_url, state_name, username, password, village_name):
+    def __init__(self, website_url, state_name, username, password, village_name, no_of_farmers):
         self.website_url = website_url
         self.state_name = state_name
         self.username = username
         self.password = password
         self.village_name = village_name
+        self.no_of_farmers = no_of_farmers
 
     # --- Main Script Logic ---
     def run_automation(self):
@@ -119,8 +120,10 @@ class AutomationHelper:
                 return
 
             # --- (D) LOOP THROUGH EACH FARMER, ALWAYS TARGETING tr[2] ---
-            for idx in range(0, 3):
-                print(f"\n===== Processing farmer {idx+1} of {2} =====")
+            if not self.no_of_farmers or self.no_of_farmers < 1:
+                self.no_of_farmers = num_farmers
+            for idx in range(0, self.no_of_farmers):
+                print(f"\n===== Processing farmer {idx+1} of {self.no_of_farmers} =====")
 
                 # (D.1) Re-open the “Schedules(Ph.-I)” pop-up
                 schedules_button = WebDriverWait(driver, 15).until(
