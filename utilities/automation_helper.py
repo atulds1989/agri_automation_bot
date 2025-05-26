@@ -167,6 +167,7 @@ class AutomationHelper:
                     checkbox = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, checkbox_xpath)))
                     checkbox.click()
                     print("Farmer selected.")
+                    time.sleep(2)
                 except Exception as e:
                     print(f"Could not click farmer checkbox: {e}")
 
