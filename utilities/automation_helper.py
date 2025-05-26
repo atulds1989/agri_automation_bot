@@ -75,16 +75,7 @@ class AutomationHelper:
 
             # --- (B2) SELECT VILLAGE NAME FROM BLOCK A ---
             print(f"Selecting Village: {self.village_name}")
-            # try:
-            #     village_dropdown = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "vlg_list")))
-            #     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", village_dropdown)
-            #     village_dropdown.click()
-            #     time.sleep(0.5)
-            #     village_dropdown.find_element(By.XPATH, f".//option[normalize-space(text())='{VILLAGE_NAME}']").click()
-            #     print(f"→ source_irri set to '{VILLAGE_NAME}'")
-            # except Exception as e:
-            #     print(f"Could not set Source of Irrigation: {e}")
-                
+    
             village_dropdown = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, "vlg_list")))
             select_village = Select(village_dropdown)
             select_village.select_by_visible_text(self.village_name)
@@ -231,18 +222,6 @@ class AutomationHelper:
                         except Exception as e:
                             print(f"Could not set field_05: {e}")
 
-                        # # 05. Net Unirrigated Area → field_06 = "0.0000"
-                        # try:
-                        #     field06 = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, "field_06")))
-                        #     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field06)
-                        #     field06.clear()
-                        #     field06.send_keys("0.0000")
-                        #     field06.send_keys(Keys.TAB)
-                        #     time.sleep(0.5)
-                        #     print("→ field_06 set to 0.0000")
-                        # except:
-                        #     print("field_06 not found; skipping")
-
                         # Number of Crops → tot_crops = "3"
                         got_crops = False
                         try:
@@ -271,18 +250,6 @@ class AutomationHelper:
                                 got_crops = False
                         else:
                             print("Number of Crops field not found; skipping Block D")
-
-                        # # (D.5) BLOCK D → only if got_crops True AND total_area > 0.0
-                        # if got_crops and total_area > 0.0:
-                        #     print("--- Filling Block D ---")
-                            # first_half_area = np.round(total_area / 2.0)
-                            # second_half_area = np.round(total_area - first_half_area)
-
-                            # print(f"total area : {total_area:4f}, Calculated first_half_area: {first_half_area:.4f},\
-                            #        second_half_area: {second_half_area:.4f}")
-                            
-                            # first_formatted_half = f"{first_half_area:.4f}"
-                            # second_formatted_half = f"{first_half_area:.4f}"
 
                         # (D.5) BLOCK D → only if got_crops True AND total_area > 0.0
                         if got_crops and total_area > 0.0:
@@ -364,9 +331,6 @@ class AutomationHelper:
                         print(f"Could not set field_05: {e}")
 
                 try:
-                    # field05 = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "field_05")))
-                    # driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field05)
-
                     rem = WebDriverWait(driver, 5).until(
                         EC.element_to_be_clickable((
                             By.NAME,
